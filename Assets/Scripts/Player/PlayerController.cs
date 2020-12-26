@@ -160,6 +160,7 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //take attribute values from attributes manager
         strength = AttributesManager.instance.globalStrength;
         agility = AttributesManager.instance.globalAgility;
         intelligence = AttributesManager.instance.globalIntelligense;
@@ -184,25 +185,10 @@ public class PlayerController : MonoBehaviour
         dashingDuration = dashingTime;
         canDashCooldown = canDashCooldownTime;
         dodgingDuration = dodgingTime;
-        canDodgeCooldown = canDodgeCooldownTime;
+        canDodgeCooldown = canDodgeCooldownTime;       
 
-        //currentGun--;
-
-        //enableGunSystem = true;
-
-        //SwitchGun();
-
-        //gunStartPos = gunHolder.localPosition;
-
-        //character = GetComponent<CharacterController>;
-
-
-        //wallRunRate = wallRunCounter;
-        //wallRunningRate = wallRunningCounter;
-
+        //UI
         UIController.instance.ammoText.text = "SHURIKEN: " + activeThrWeapon.currentAmmo;
-
-
     }
 
     // Update is called once per frame
@@ -210,17 +196,16 @@ public class PlayerController : MonoBehaviour
     {
         if (!UIController.instance.pauseScreen.activeInHierarchy && !GameManager.instance.levelEnding)
         {
-
             //Playdir = PlayerController.instance.transform.position;
             if (canJump == true)
             {
                 //PlayerHealthController.instance.StaminaRegen();
             }
 
-
             //strore y velocity
             float yStore = moveInput.y;//equals whatever the moveinput.y is at the start of the frame.At the start of the frame will be what we will calculate it to be on the last frame|||must be put before the movement input
-                                       //set move speed
+ 
+            //set movevement speeds
             moveSpeed = 2 + (agility / 2);
             runSpeed = moveSpeed * 2;
             crouchSpeed = moveSpeed / 2;
@@ -233,7 +218,6 @@ public class PlayerController : MonoBehaviour
             moveInput = horiMove + vertMove;
             moveInput.Normalize();
             
-
             //running or moving or dashing
             if (!crouching)//otherwise the following run during crouching too
             {
@@ -260,7 +244,7 @@ public class PlayerController : MonoBehaviour
                     running = false;
                 }
 
-                //dashing/dodging
+                //dashing
                 if (Input.GetKey(KeyCode.F) && canDash && abilityCanDash && PlayerHealthController.instance.currentMana > 1)
                 {
                     if (canDash)
@@ -271,6 +255,7 @@ public class PlayerController : MonoBehaviour
                     canDash = false;
                     dashing = true;
                 }
+                //dodging or smaller dash that consumes stamina
                 if (Input.GetKey(KeyCode.CapsLock) && canDodge && abilityCanDodge && PlayerHealthController.instance.currentStamina > 1)
                 {
                     PlayerHealthController.instance.SpendStamina(5);
@@ -287,15 +272,15 @@ public class PlayerController : MonoBehaviour
                 }
                 if (dashing)
                 {
-                    //if (PlayerHealthController.instance.notMoving)
-                    //{
-                    //charCon.Move(-transform.forward * 20 * dashSpeed * Time.deltaTime);
-                    //}
-                    //else
-                    //{
-                    charCon.Move(moveInput * agility /** dashSpeed*/ * Time.deltaTime);//needs fix with high agility values, higher agility means faster and longer distance
-                    dashingDuration -= Time.deltaTime;
-                    //}
+                    if (PlayerHealthController.instance.notMoving)
+                    {
+                        charCon.Move(-transform.forward * 20 /** dashSpeed*/ * Time.deltaTime);
+                    }
+                    else
+                    {
+                        charCon.Move(moveInput * agility /** dashSpeed*/ * Time.deltaTime);//needs fix with high agility values, higher agility means faster and longer distance
+                        dashingDuration -= Time.deltaTime;
+                    }
                 }
                 if (dodging)
                 {
@@ -376,6 +361,7 @@ public class PlayerController : MonoBehaviour
             //casts imaginary sphere to check if it touches the whatIsGround layers, set canJump bool
             canJump = Physics.OverlapSphere(groundCheckPoint.position, .25f, whatIsGround).Length > 0;
             //jumping
+
             if (PlayerHealthController.instance.currentStamina >= 5)
             {
                 if (Input.GetKeyDown(KeyCode.Space) && canJump)//this is problematic because canJump turns to false as soon as the OverlapSphere stops colliding with the "Ground"
@@ -441,7 +427,7 @@ public class PlayerController : MonoBehaviour
                 {
                     if (Input.GetMouseButtonUp(0) && activeThrWeapon.fireCounter <= 0)
                     {
-                        Shoot();
+                        Throw();
                     }
                 }
             }
@@ -463,44 +449,8 @@ public class PlayerController : MonoBehaviour
             anim.SetFloat("runSpeed", moveInput.magnitude);
             anim.SetBool("hasShuriken", throwingHolderSystem.activeInHierarchy);
 
-            //if (!crouching)
-            //{
-
-            //}
-            //else
-            //{
-            //    moveInput = moveInput * crouchSpeed;
-            //    running = false;
             //}
 
-            //if (!wallRunning)
-            //{
-            //handle camera tilt fix
-            //rotationVector = transform.rotation.eulerAngles;//not sure if needed
-            //rotationVector.z = 0f;
-            //transform.rotation = Quaternion.Euler(rotationVector);
-
-            // camTrans.rotation = Quaternion.Euler( new Vector3((-mouseInput.y + camTrans.rotation.eulerAngles.x), 0f, 0f));
-
-            //camTrans.rotation.eulerAngles.z = 0;
-
-
-            //}
-            //else//for wall running
-            //{
-            //    moveInput.y = jumpPower / 2; 
-            //}
-
-
-            //muted to fix double jump bug
-            //if (canJump)
-            // {
-            //canDoubleJump = false;
-            // }
-
-
-            //}
-            
 
 
             //camTrans.rotation = Quaternion.Euler(new Vector3((-mouseInput.y + camTrans.rotation.eulerAngles.x), 0f, 0f));
@@ -512,374 +462,13 @@ public class PlayerController : MonoBehaviour
             else if (camTrans.rotation.eulerAngles.x > 180f && camTrans.rotation.eulerAngles.x < 360f - maxViewAngle)
             {
                 camTrans.rotation = Quaternion.Euler(-maxViewAngle, camTrans.rotation.eulerAngles.y, camTrans.rotation.eulerAngles.z);
-            }
-
-            //muzzleFlash.SetActive(false);
+            }            
 
             #region Walking on Moving Platforms
             /* If Player is touching a MovingPlatform 
              * 'lock' players movement vector to the MovingPlatform 
              */
             #endregion
-
-
-            //Debug.Log("fHitRight " + fHitRight + "\n " + "fHitLeft " + fHitLeft + "   " + "fHitForward " + fHitForward);
-
-            //handle wall running
-            //shooting raycasts
-            //if (running && cantWallRun == false)
-            //{
-            //    //rayWallLeft = Physics.Raycast(camTrans.position, -PlayerController.instance.transform.right, out hitLeft, 2f, wallRunClimbLayerMask);
-            //    //rayWallRight = Physics.Raycast(camTrans.position, PlayerController.instance.transform.right, out hitRight, 2f, wallRunClimbLayerMask);
-            //    //rayWallForward = Physics.Raycast(camTrans.position, PlayerController.instance.transform.forward, out hitForward, 2f, wallRunClimbLayerMask);
-            //    //rayWallForLeft = Physics.Raycast(camTrans.position, (PlayerController.instance.transform.forward - PlayerController.instance.transform.right) * Mathf.Sqrt(8) / 2, out hitForLeft, 2f, wallRunClimbLayerMask);
-            //    //rayWallForRight = Physics.Raycast(camTrans.position, (PlayerController.instance.transform.forward + PlayerController.instance.transform.right) * Mathf.Sqrt(8) / 2, out hitForRight, 2f, wallRunClimbLayerMask);
-
-            //    if (rayWallLeft)
-            //    {
-
-            //        Debug.Log("Left Raycast hit wall");
-            //        fHitLeft = Vector3.Distance(PlayerController.instance.transform.position, hitLeft.point);
-            //        wallRunning = true;
-            //        wallLeft = true;
-
-
-
-            //    }
-            //    else
-            //    {
-            //        wallLeft = false;
-            //    }
-
-
-
-            //    if (rayWallRight)
-            //    {
-            //        Debug.Log("Right Raycast hit wall");
-            //        fHitRight = Vector3.Distance(PlayerController.instance.transform.position, hitRight.point);
-            //        wallRunning = true;
-            //        wallRight = true;
-
-            //    }
-            //    else
-            //    {
-            //        wallRight = false;
-            //    }
-
-
-
-            //    if (rayWallForward )
-            //    {
-            //        Debug.Log("Forward Raycast hit wall");
-            //        fHitForward = Vector3.Distance(PlayerController.instance.transform.position, hitForward.point);
-            //        wallRunning = true;
-            //        wallForward = true;
-
-            //    }
-            //    else
-            //    {
-            //        wallForward = false;
-            //    }
-
-
-
-
-            //    //if (rayWallForRight)
-            //    //{
-            //    //    Debug.Log("ForRight Raycast hit wall");
-            //    //    fHitForRight = Vector3.Distance(PlayerController.instance.transform.position, hitForRight.point);
-            //    //}
-
-
-
-
-            //    //if (rayWallForLeft)
-            //    //{
-            //    //    Debug.Log("ForLeft Raycast hit wall");
-
-            //    //    fHitForLeft = Vector3.Distance(PlayerController.instance.transform.position, hitForLeft.point);
-            //    //}
-
-            //    //if (rayWallRight || rayWallLeft || rayWallForward || rayWallForRight || rayWallForLeft)
-            //    //{
-            //    //    float fHitMin = Mathf.Min(fHitRight, fHitLeft, fHitForLeft, fHitForRight, fHitForward);
-
-
-            //    //    if (fHitMin == fHitLeft)
-            //    //    {
-            //    //        wallRight = false;
-            //    //        wallLeft = true;
-            //    //        wallForward = false;
-            //    //        wallForRight = false;
-            //    //        wallForLeft = false;
-            //    //        wallRunning = true;
-            //    //    }
-            //    //    else if (fHitMin == fHitForRight)
-            //    //    {
-            //    //        wallRight = false;
-            //    //        wallLeft = false;
-            //    //        wallForward = false;
-            //    //        wallForRight = true;
-            //    //        wallForLeft = false;
-            //    //        wallRunning = true;
-            //    //    }
-            //    //    else if (fHitMin == fHitForLeft)
-            //    //    {
-            //    //        wallRight = false;
-            //    //        wallLeft = false;
-            //    //        wallForward = false;
-            //    //        wallForRight = false;
-            //    //        wallForLeft = true;
-            //    //        wallRunning = true;
-            //    //    }
-            //    //    else
-            //    //    {
-            //    //        wallRight = false;
-            //    //        wallLeft = false;
-            //    //        wallForward = true;
-            //    //        wallForRight = false;
-            //    //        wallForLeft = false;
-            //    //        wallRunning = true;
-            //    //    }
-            //    //}
-
-
-            //}
-            //else
-            //{
-            //    //wallForLeft = false;
-            //    //wallForRight = false;
-            //    wallForward = false;
-            //    wallLeft = false;
-            //    wallRight = false;
-            //    wallRunning = false;
-            //    //rayWallForLeft = false;
-            //    //rayWallForRight = false;
-            //    rayWallForward = false;
-            //    rayWallRight = false;
-            //    rayWallLeft = false;
-            //}
-
-            //if (wallRunning )
-            //{
-            //    wallRunningRate -= Time.deltaTime;
-
-
-
-            //    //if (wallForLeft)
-            //    //{
-            //    //    vForLeft = Vector3.Cross(hitForLeft.normal, Vector3.up);
-            //    //    charCon.Move(vForLeft * runSpeed * Time.deltaTime);
-            //    //   // moveInput.y
-            //    //}
-            //    //else if(wallForRight)
-            //    //{
-            //    //    vForRight = Vector3.Cross(hitForRight.normal, Vector3.up);
-            //    //    charCon.Move(vForRight * runSpeed * Time.deltaTime);
-            //    //}
-            //    //else if (wallForward)
-            //    //{
-            //    //    vForward = Vector3.Cross(hitForward.normal, Vector3.up);
-            //    //    charCon.Move(vForward * runSpeed * Time.deltaTime);
-            //    //}
-            //    if (wallLeft)
-            //    {
-            //        vLeft = Vector3.Cross(hitLeft.normal, Vector3.up);
-            //        charCon.Move(vLeft * runSpeed * Time.deltaTime);
-
-            //        //rotationVector = transform.rotation.eulerAngles;
-            //        //rotationVector.z = -15 ;
-            //        //transform.rotation = Quaternion.Euler(rotationVector);
-
-            //        //targetRotation *= Quaternion.AngleAxis(50, Vector3.forward);
-            //        //transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 10*smooth*Time.deltaTime);
-            //        float angle = rotateSpeed * Time.deltaTime *2;
-            //        transform.rotation *= Quaternion.AngleAxis(angle, Vector3.forward);
-
-
-
-            //    }
-            //    else if(wallRight)
-            //    {
-            //        vRight = Vector3.Cross(hitRight.normal, Vector3.up);
-            //        charCon.Move(-vRight * runSpeed * Time.deltaTime);
-            //    }
-            //    else
-            //    {
-            //        vForward = Vector3.Cross(hitForward.normal, Vector3.up);
-            //        charCon.Move(vForward * runSpeed * Time.deltaTime);
-
-
-            //    }
-
-
-            //}
-
-            //if (wallRunningRate <= 0)
-            //{
-            //    wallRunningRate = wallRunningCounter;
-            //    wallRunning = false;
-            //    cantWallRun = true;
-
-            //    //rotationVector = transform.rotation.eulerAngles;//not sure if needed
-            //    //rotationVector.z = 0f;
-            //    //transform.rotation = Quaternion.Euler(rotationVector);
-
-            //    //camRotationVector.z = 0f;
-            //    //camRotationVector.y = 0f;
-            //    //camTrans.rotation = Quaternion.Euler(camRotationVector);
-            //    //camTrans.rotation = Quaternion.Euler(camTrans.rotation.eulerAngles + new Vector3(-mouseInput.y, 0f, 0f));
-
-
-
-
-            //}
-
-            //if (cantWallRun)
-            //{
-            //    wallRunRate -= Time.deltaTime;
-            //}
-
-
-            //if (wallRunRate <= 0)
-            //{
-            //    wallRunRate = wallRunCounter;
-            //    cantWallRun = false;
-            //}
-
-
-            // hitRight.normal
-
-            //Handle Shooting
-            //single shots
-            //if (enableGunSystem == true)
-            //{
-            //    gunHolderSystem.SetActive(true);
-            //    if (Input.GetMouseButtonDown(0) && activeGun.fireCounter <= 0 && activeGun.canAutoFire == false)
-            //    {
-            //        RaycastHit hit;
-            //        if (Physics.Raycast(camTrans.position, camTrans.forward, out hit, 50f/*, layerMask*/))
-            //        {
-
-            //            if (Vector3.Distance(camTrans.position, hit.point) > 1f)
-            //            {
-            //                firePoint.LookAt(hit.point);
-            //            }
-
-            //        }
-
-            //        else
-            //        {
-            //            firePoint.LookAt(camTrans.position + (camTrans.forward * 30f));
-            //        }
-
-
-            //        //Instantiate(bullet, firePoint.position, firePoint.rotation);
-            //        FireShot();
-            //    }
-
-            //    //repeating shots
-            //    if (Input.GetMouseButton(0) && activeGun.canAutoFire)
-            //    {
-            //        if (activeGun.fireCounter <= 0)
-            //        {
-            //            RaycastHit hit;
-            //            if (Physics.Raycast(camTrans.position, camTrans.forward, out hit, 50f/*, layerMask*/))
-            //            {
-
-            //                if (Vector3.Distance(camTrans.position, hit.point) > 2f)
-            //                {
-            //                    firePoint.LookAt(hit.point);
-            //                }
-            //                else
-            //                {
-            //                    firePoint.LookAt(camTrans.position + (camTrans.forward * 2f));
-            //                    Debug.Log("ray cast targetting innactive");
-            //                }
-
-            //            }
-
-            //            else
-            //            {
-            //                firePoint.LookAt(camTrans.position + (camTrans.forward * 30f));
-            //                //Debug.Log("HEYYYYYYYYYYYYYYYYYYY");
-            //            }
-
-
-            //            FireShot();
-            //        }
-            //    }
-
-            //    //reload
-            //    if (Input.GetKey(KeyCode.R))
-            //    {
-            //        activeGun.Reload();
-            //    }
-
-            //    //gun swapping this needs fix
-            //    if (Input.GetKeyDown(KeyCode.Tab) && !Input.GetMouseButton(1))
-            //    {
-
-            //        SwitchGun();
-
-            //    }
-
-            //    //gun swapping with 1 2 3 4
-            //    if (Input.GetKeyDown("1"))
-            //    {
-            //        SwitchWeapon1();
-            //    }
-
-            //    if (Input.GetKeyDown("2"))
-            //    {
-            //        SwitchWeapon2();
-            //    }
-
-            //    if (Input.GetKeyDown("3"))
-            //    {
-            //        SwitchWeapon3();
-            //    }
-
-            //    if (Input.GetKeyDown("4"))
-            //    {
-            //        SwitchWeapon4();
-            //    }
-
-
-            //    if (Input.GetMouseButtonDown(1))
-            //    {
-            //        CameraController.instance.ZoomIn(activeGun.zoomAmount);
-            //    }
-
-            //    if (Input.GetMouseButton(1))
-            //    {
-            //        gunHolder.position = Vector3.MoveTowards(gunHolder.position, adsPoint.position, adsSpeed * Time.deltaTime);
-            //    }
-            //    else
-            //    {
-            //        gunHolder.localPosition = Vector3.MoveTowards(gunHolder.localPosition, gunStartPos, adsSpeed * Time.deltaTime);
-            //    }
-
-            //    if (Input.GetMouseButtonUp(1))
-            //    {
-            //        CameraController.instance.ZoomOut();
-            //    }
-            //}
-            //else
-            //{
-            //    gunHolderSystem.SetActive(false);
-            //}
-
-
-
-
-
-            //}
-            //else
-            //{
-            //    footstepsFast.SetActive(false);
-            //    footstepsSlow.SetActive(false);
-            //}
 
         } 
 
@@ -911,7 +500,7 @@ public class PlayerController : MonoBehaviour
 
     //}
 
-    public void Shoot()
+    public void Throw()
     {
         RaycastHit hit;
         if (Physics.Raycast(camTrans.position, camTrans.forward, out hit, 50f)) //add layerMask
@@ -1034,6 +623,7 @@ public class PlayerController : MonoBehaviour
     //    }
     //}
 
+    //switch among melee, throwing and shooting systems
     public void SwitchWeaponSystems()
     {
         if (enableThrowingSystem == true)

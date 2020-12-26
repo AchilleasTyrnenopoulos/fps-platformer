@@ -169,8 +169,6 @@ public class PlayerHealthController : MonoBehaviour
 
             currentHealth -= damageAmount;
 
-            
-
             //death
             if (currentHealth <= 0)
             {
