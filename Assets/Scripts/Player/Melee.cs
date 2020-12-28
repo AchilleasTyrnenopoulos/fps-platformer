@@ -36,7 +36,7 @@ public class Melee : MonoBehaviour
         //reset baseDamage
         baseDamage = Convert.ToInt32(PlayerController.instance.strength / 2);
 
-        if (PlayerController.enableThrowingSystem == false)
+        if (PlayerController.instance.enabledRangedSystem == false)
         {
             if (Input.GetKey(KeyCode.Tab))
             {

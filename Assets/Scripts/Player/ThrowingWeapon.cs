@@ -6,7 +6,7 @@ public class ThrowingWeapon : MonoBehaviour
 {
     public static ThrowingWeapon instance;
 
-    public GameObject shuriken;
+    public GameObject throwingWeapon;
 
     public float fireRate;
     [HideInInspector]//variable is accessible for other scripts but can't be edited in inspector

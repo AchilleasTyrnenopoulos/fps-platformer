@@ -23,8 +23,8 @@ public class PlayerController : MonoBehaviour
     public float willpower;//determines the staminaRegenRate, the manaRegenRate
 
     [Header("MOVEMENT")]
-    public float moveSpeed ;
-    public float runSpeed ;
+    public float moveSpeed;
+    public float runSpeed;
     public bool running = false;
 
     [Space()]
@@ -61,13 +61,13 @@ public class PlayerController : MonoBehaviour
     public float gravityModifier;
     //public float stdGravityModifier = 2f;
     public float jumpPower;
-    public bool canJump, canDoubleJump ;//it was private, needs to be changed to private
+    public bool canJump, canDoubleJump;//it was private, needs to be changed to private
     public float fallDamageModifier;
 
     [Space()]
     public Transform groundCheckPoint;
     public LayerMask whatIsGround;
-    
+
     [Space()]
     private float bounceAmount;
     private bool bounce;
@@ -75,8 +75,10 @@ public class PlayerController : MonoBehaviour
     [Header("AMIMATION")]
     public Animator anim;
 
-    
-   
+
+    [Header("SHOOTING")]
+    public bool enabledShootingSystem;
+
 
     [Header("THROWING")]
     public ThrowingWeapon activeThrWeapon;
@@ -84,12 +86,13 @@ public class PlayerController : MonoBehaviour
     [Header("Throwing Weapons")]
     //public GameObject throwingWeapon;
     public Transform firePoint;
-    
+
     [Space(10)]
-    public static bool enableThrowingSystem;
+    public bool enabledRangedSystem;
     public GameObject throwingHolderSystem;
     public GameObject meleeHolderSystem;
     public GameObject offhandMeleeHolderSystem;
+    public GameObject shootingHolderSystem;
 
     //[Header("Movement on Moving Platforms")]    
 
@@ -112,33 +115,7 @@ public class PlayerController : MonoBehaviour
 
     //public float dashSpeed; not needed if handled by agility
 
-    //[Header("Wall Running")]
-    //public bool wallRunning = false;
-    //public bool wallRight = false, wallLeft = false, /*wallForRight = false*/ /*wallForLeft= false,*/ wallForward = false;
-    //RaycastHit hitRight;
-    //RaycastHit hitLeft;
-    //RaycastHit hitForward;
-    ////RaycastHit hitForRight;
-    ////RaycastHit hitForLeft;
-    ////Vector3 vForLeft = new Vector3();
-    ////Vector3 vForRight = new Vector3();
-    //Vector3 vForward = new Vector3();
-    //Vector3 vLeft = new Vector3();
-    //Vector3 vRight = new Vector3();
-    //float fHitLeft, fHitRight, fHitForLeft, fHitForRight, fHitForward;
-    //public bool rayWallRight = false, rayWallLeft = false,/* rayWallForRight = false, rayWallForLeft = false,*/ rayWallForward = false;
-    //public float wallRunCounter = 2f;
-    //public float wallRunRate;
-    //public float wallRunningCounter = 0.2f;
-    //public float wallRunningRate;
-    //public bool cantWallRun = false;
 
-    //float rotateSpeed = -15;
-    //Vector3 rotationVector;
-    //Vector3 camRotationVector;
-
-    //float smooth = 1f;
-    //Quaternion targetRotation;
 
     [Header("Fighting")]
     //public Melee melee;
@@ -147,7 +124,7 @@ public class PlayerController : MonoBehaviour
     public bool attack3;
     public bool attack4;
     public Collider meleeCollider;
-    
+
     //counter for sprint SpendStamina()
     private float sprintSpendStamina = 0.2f;
     #endregion
@@ -167,7 +144,13 @@ public class PlayerController : MonoBehaviour
         endurance = AttributesManager.instance.globalEndurance;
         willpower = AttributesManager.instance.globalWillpower;
 
-       
+        //activate weapons systems
+        throwingHolderSystem.SetActive(false);
+        shootingHolderSystem.SetActive(false);
+        meleeHolderSystem.SetActive(true);
+        offhandMeleeHolderSystem.SetActive(true);
+        enabledShootingSystem = false;
+        enabledShootingSystem = false;
 
         //set move speed
         moveSpeed = 2 + (agility / 2);
@@ -175,7 +158,7 @@ public class PlayerController : MonoBehaviour
         crouchSpeed = moveSpeed / 2;
         //set jump power
         jumpPower = (agility / 2) + (strength / 2);//make jumpPower property to access different 'value' depending on the strength and agility attributes
-        
+
         //set dashing time
         dashingTime = 0.3f - (agility / 100);
         dodgingTime = 0.1f - (agility / 100);//if sDashingTime < 0, sDashingTime = 0.01f;
@@ -185,7 +168,7 @@ public class PlayerController : MonoBehaviour
         dashingDuration = dashingTime;
         canDashCooldown = canDashCooldownTime;
         dodgingDuration = dodgingTime;
-        canDodgeCooldown = canDodgeCooldownTime;       
+        canDodgeCooldown = canDodgeCooldownTime;
 
         //UI
         UIController.instance.ammoText.text = "SHURIKEN: " + activeThrWeapon.currentAmmo;
@@ -204,7 +187,7 @@ public class PlayerController : MonoBehaviour
 
             //strore y velocity
             float yStore = moveInput.y;//equals whatever the moveinput.y is at the start of the frame.At the start of the frame will be what we will calculate it to be on the last frame|||must be put before the movement input
- 
+
             //set movevement speeds
             moveSpeed = 2 + (agility / 2);
             runSpeed = moveSpeed * 2;
@@ -217,7 +200,7 @@ public class PlayerController : MonoBehaviour
             Vector3 horiMove = transform.right * Input.GetAxisRaw("Horizontal");
             moveInput = horiMove + vertMove;
             moveInput.Normalize();
-            
+
             //running or moving or dashing
             if (!crouching)//otherwise the following run during crouching too
             {
@@ -375,7 +358,7 @@ public class PlayerController : MonoBehaviour
                     moveInput.y = jumpPower;
 
                     PlayerHealthController.instance.SpendStamina(5);
-                  
+
                     //AudioManager.instance.PlaySFX(8);
                 }
                 else if (canDoubleJump && Input.GetKeyDown(KeyCode.Space))
@@ -419,11 +402,17 @@ public class PlayerController : MonoBehaviour
             camTrans.rotation = Quaternion.Euler(camTrans.rotation.eulerAngles + new Vector3(-mouseInput.y, 0f, 0f));
 
             //***********************************************************************HANDLE SHOOTING********************************************************************************
-
-            if (enableThrowingSystem == true)
+            if (enabledRangedSystem)
             {
-                throwingHolderSystem.SetActive(true);
-                meleeHolderSystem.SetActive(false);
+                if (enabledShootingSystem)
+                {
+                    if(Input.GetMouseButtonDown(0))
+                    {
+                        //Shoot()
+                        Debug.Log("shooting");
+                    }
+                }
+                else
                 {
                     if (Input.GetMouseButtonUp(0) && activeThrWeapon.fireCounter <= 0)
                     {
@@ -431,16 +420,11 @@ public class PlayerController : MonoBehaviour
                     }
                 }
             }
-            else
-            {
-                throwingHolderSystem.SetActive(false);
-                meleeHolderSystem.SetActive(true);
-            }
+
             //handle switch weapon systems
             if (Input.GetKeyDown(KeyCode.Q))
             {
                 SwitchWeaponSystems();
-
             }
 
             //animations
@@ -462,7 +446,7 @@ public class PlayerController : MonoBehaviour
             else if (camTrans.rotation.eulerAngles.x > 180f && camTrans.rotation.eulerAngles.x < 360f - maxViewAngle)
             {
                 camTrans.rotation = Quaternion.Euler(-maxViewAngle, camTrans.rotation.eulerAngles.y, camTrans.rotation.eulerAngles.z);
-            }            
+            }
 
             #region Walking on Moving Platforms
             /* If Player is touching a MovingPlatform 
@@ -470,12 +454,12 @@ public class PlayerController : MonoBehaviour
              */
             #endregion
 
-        } 
+        }
 
     }
 
     #region Functions
-    
+
 
     //public void Shoot()
     //{
@@ -518,7 +502,7 @@ public class PlayerController : MonoBehaviour
         if (activeThrWeapon.currentAmmo > 0)
         {
             activeThrWeapon.currentAmmo--;
-            Instantiate(activeThrWeapon.shuriken, firePoint.position, firePoint.rotation);
+            Instantiate(activeThrWeapon.throwingWeapon, firePoint.position, firePoint.rotation);
             activeThrWeapon.fireCounter = activeThrWeapon.fireRate;
 
             UIController.instance.ammoText.text = "SHURIKEN: " + activeThrWeapon.currentAmmo;
@@ -544,99 +528,35 @@ public class PlayerController : MonoBehaviour
     //    firePoint.position = activeGun.firepoint.position;
     //}
 
-    ////Switch Weapons with 1 2 3 4 Functions, need fix
-    //public void SwitchWeapon1()
-    //{
-    //    activeGun.gameObject.SetActive(false);
 
-    //    activeGun = allGuns[0];
-    //    activeGun.gameObject.SetActive(true);
-
-    //    UIController.instance.ammoText.text = activeGun.clipCurrent + "/" + activeGun.remainAmmo + "/" + activeGun.clips;
-
-    //    firePoint.position = activeGun.firepoint.position;
     //}
 
-    //public void SwitchWeapon2()
-    //{
-    //    activeGun.gameObject.SetActive(false);
-
-    //    activeGun = allGuns[1];
-    //    activeGun.gameObject.SetActive(true);
-
-    //    UIController.instance.ammoText.text = activeGun.clipCurrent + "/" + activeGun.remainAmmo + "/" + activeGun.clips;
-
-    //    firePoint.position = activeGun.firepoint.position;
-    //}
-
-    //public void SwitchWeapon3()
-    //{
-    //    activeGun.gameObject.SetActive(false);
-
-    //    activeGun = allGuns[2];
-    //    activeGun.gameObject.SetActive(true);
-
-    //    UIController.instance.ammoText.text = activeGun.clipCurrent + "/" + activeGun.remainAmmo + "/" + activeGun.clips;
-
-    //    firePoint.position = activeGun.firepoint.position;
-    //}
-
-    //public void SwitchWeapon4()
-    //{
-    //    activeGun.gameObject.SetActive(false);
-
-    //    activeGun = allGuns[3];
-    //    activeGun.gameObject.SetActive(true);
-
-    //    UIController.instance.ammoText.text = activeGun.clipCurrent + "/" + activeGun.remainAmmo + "/" + activeGun.clips;
-
-    //    firePoint.position = activeGun.firepoint.position;
-    //}
-
-    //public void AddGun(string gunToAdd)
-    //{
-    //    //Debug.Log("Adding " + gunToAdd);
-    //    bool gunUnlocked = false;
-
-    //    if (unlockableGuns.Count > 0)
-    //    {
-    //        for (int i = 0; i < unlockableGuns.Count; i++)
-    //        {
-    //            if (unlockableGuns[i].gunName == gunToAdd)
-    //            {
-    //                gunUnlocked = true;
-
-    //                allGuns.Add(unlockableGuns[i]);
-
-    //                unlockableGuns.RemoveAt(i);
-
-    //                i = unlockableGuns.Count;
-    //            }
-    //        }
-
-    //    }
-
-    //    if (gunUnlocked)
-    //    {
-    //        currentGun = allGuns.Count - 2;
-    //        SwitchGun();
-    //    }
-    //}
-
-    //switch among melee, throwing and shooting systems
+    //switch/cycle through melee, throwing and shooting systems
     public void SwitchWeaponSystems()
     {
-        if (enableThrowingSystem == true)
+        if (enabledRangedSystem)
         {
-            enableThrowingSystem = false;
-            meleeHolderSystem.SetActive(true);
-            offhandMeleeHolderSystem.SetActive(true);
+            if (enabledShootingSystem)
+            {
+                shootingHolderSystem.SetActive(false);
+                throwingHolderSystem.SetActive(true);
+                enabledShootingSystem = false;
+            }
+            else
+            {
+                throwingHolderSystem.SetActive(false);
+                meleeHolderSystem.SetActive(true);
+                offhandMeleeHolderSystem.SetActive(true);
+                enabledRangedSystem = false;
+            }
         }
         else
         {
-            enableThrowingSystem = true;
             meleeHolderSystem.SetActive(false);
             offhandMeleeHolderSystem.SetActive(false);
+            shootingHolderSystem.SetActive(true);
+            enabledShootingSystem = true;
+            enabledRangedSystem = true;
         }
     }
 
@@ -649,7 +569,7 @@ public class PlayerController : MonoBehaviour
     //handle sword collider while attacking
     public void DisableSwordCollider()
     {
-       meleeCollider.isTrigger = false;
+        meleeCollider.isTrigger = false;
     }
     //set-trigger-to-true function to use as an animation event 
 
@@ -687,7 +607,7 @@ public class PlayerController : MonoBehaviour
         attack4 = false;
     }
 
-   
+
 
     #endregion
 }
