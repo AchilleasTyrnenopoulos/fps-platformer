@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
 
     public float waitAfterDying = 2f;
-    private float waitAfterVictory = 2f;
+    //private float waitAfterVictory = 2f;
 
     [HideInInspector]
     public bool levelEnding;

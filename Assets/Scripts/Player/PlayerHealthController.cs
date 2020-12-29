@@ -38,7 +38,7 @@ public class PlayerHealthController : MonoBehaviour
        
         //set regenaration rates
         healthRegenRate = 25 / AttributesManager.instance.globalEndurance;
-        staminaRegenRate = 15 / AttributesManager.instance.globalWillpower;
+        staminaRegenRate = 5 / AttributesManager.instance.globalWillpower;
         manaRegenRate = 25 / AttributesManager.instance.globalWillpower;
 
         //set health variables        
@@ -79,7 +79,7 @@ public class PlayerHealthController : MonoBehaviour
         maxMana = Convert.ToInt32(PlayerController.instance.intelligence) * 10;
 
         healthRegenRate = 25 / PlayerController.instance.endurance;
-        staminaRegenRate = 25 / PlayerController.instance.willpower;
+        staminaRegenRate = 5 / PlayerController.instance.willpower;
         manaRegenRate = 25 / PlayerController.instance.willpower;
 
         //check if player is moving
@@ -157,7 +157,7 @@ public class PlayerHealthController : MonoBehaviour
         }    
     }
 
-    #region Methods
+    #region Functions
     public void DamagePlayer(int damageAmount)
     {
         //reset health regeneration counter / can't regenerate when taking damage
@@ -168,8 +168,6 @@ public class PlayerHealthController : MonoBehaviour
             //AudioManager.instance.PlaySFX(7);
 
             currentHealth -= damageAmount;
-
-            
 
             //death
             if (currentHealth <= 0)
@@ -243,7 +241,8 @@ public class PlayerHealthController : MonoBehaviour
         {
             //decimalCurrentStamina += Time.deltaTime;
             //currentStamina = Mathf.RoundToInt(decimalCurrentStamina);
-            currentStamina += maxStamina / 10;
+            currentStamina++;
+            /*currentStamina += maxStamina / 10*/;
 
             UIController.instance.staminaSlider.value = currentStamina;
             UIController.instance.staminaText.text = "STAMINA: " + currentStamina + "/" + maxStamina;
