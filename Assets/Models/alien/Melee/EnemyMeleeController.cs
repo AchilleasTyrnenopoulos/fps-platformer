@@ -9,6 +9,14 @@ public class EnemyMeleeController : MonoBehaviour
     NavMeshAgent agent;
     GameObject player;
     Animator anim;
+    WPManager wpScript;
+
+    public GameObject ragdoll;
+
+    //patrolling
+    public bool isPatrol = false;
+    public float patrolWaitTime;
+    public int patrolArrCounter = 0;
 
     Vector3 startPos;    
     public float walkspeed = 2f;
@@ -25,12 +33,11 @@ public class EnemyMeleeController : MonoBehaviour
     public float awarenessTimer = 10f;
     public float awarenessCounter = 0f;
 
-
     //attacking
-    float attackingRange;//in check to attack replace agent.stopping distance with this
-    
+    float attackingRange;//in check to attack replace agent.stopping distance with this    
+    public bool attacking = false;
 
-    public enum STATE { IDLE, PATROL, AWARE, CHASE, ATTACK, GOTOSTART, HIDE, REGEN}
+    public enum STATE { IDLE, AWARE, CHASE, ATTACK, GOTOSTART, HIDE, REGEN}
     STATE state;
     #endregion
 
@@ -40,6 +47,7 @@ public class EnemyMeleeController : MonoBehaviour
         agent = this.GetComponent<NavMeshAgent>();
         player = GameObject.FindGameObjectWithTag("Player");
         anim = this.GetComponentInChildren<Animator>();
+        wpScript = this.GetComponentInChildren<WPManager>();
 
         agent.speed = walkspeed;
         state = STATE.IDLE;
@@ -50,6 +58,15 @@ public class EnemyMeleeController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //test ragdoll
+        if (this.GetComponent<EnemyHealthController>().isDead)
+        {
+            GameObject rd = Instantiate(ragdoll, this.transform.position, this.transform.rotation);
+            rd.transform.Find("Hips").GetComponent<Rigidbody>().AddForce(Camera.main.transform.forward * 1000);
+            Destroy(this.gameObject);
+            return;
+        }
+
         if (state != STATE.CHASE)
             agent.speed = walkspeed;
 
@@ -101,6 +118,10 @@ public class EnemyMeleeController : MonoBehaviour
                     anim.SetTrigger("walking");
                     state = STATE.AWARE;
                 }
+                else if (isPatrol)
+                {
+                    GoToWaypoint(patrolArrCounter);                                                                  
+                }
                 else
                 {
                     return;
@@ -128,9 +149,6 @@ public class EnemyMeleeController : MonoBehaviour
                     agent.ResetPath();
                     state = STATE.AWARE;
                 }
-                break;
-
-            case STATE.PATROL:
                 break;
 
             case STATE.AWARE:
@@ -170,18 +188,25 @@ public class EnemyMeleeController : MonoBehaviour
                 break;
 
             case STATE.ATTACK:
-                //add crouch attack
-
-                //dont move
-                //agent.isStopped = true;
-                agent.SetDestination(agent.transform.position);
                 //rotate npc to face player
                 this.transform.LookAt(player.transform.position);
+               
 
-                if(Vector3.Distance(agent.transform.position, player.transform.position) > agent.stoppingDistance)
+                if (!attacking)
                 {
-                    anim.SetTrigger("running");
-                    state = STATE.CHASE;
+                    //add crouch attack
+
+                    //dont move
+                    //agent.isStopped = true;
+                    agent.SetDestination(agent.transform.position);
+        
+
+
+                    if (Vector3.Distance(agent.transform.position, player.transform.position) > agent.stoppingDistance)
+                    {
+                        anim.SetTrigger("running");
+                        state = STATE.CHASE;
+                    }
                 }
                 break;
 
@@ -195,10 +220,46 @@ public class EnemyMeleeController : MonoBehaviour
         #endregion
     }
 
-    //add agent stop and resume with animation events
-    //in start and end of animation attack 
-    //so that the npc reaches player 
-    //stops, attacks, the attack animation finishes 
-    //and then it can attack again or 
-    //transition to other states
+    #region Functions
+    void GoToWaypoint(int i)
+    {
+        //trigger walking animation
+        if (!agent.hasPath && !agent.isStopped)
+            anim.SetTrigger("walking");
+
+        //set waypoint destination position
+        agent.SetDestination(wpScript.waypoints[i].transform.position);
+
+        //stop npc
+        if (Vector3.Distance(agent.transform.position, wpScript.waypoints[i].transform.position) <= agent.stoppingDistance + 1)
+        {
+            //stop npc
+            if(!agent.isStopped)
+                anim.SetTrigger("idle");
+            
+            agent.isStopped = true;
+
+            //change waypoint
+            if (i < wpScript.waypoints.Length - 1)
+            {
+                patrolArrCounter++;
+                Invoke("ResumeAgent", patrolWaitTime);
+            }
+            else
+            {
+                patrolArrCounter = 0;
+                Invoke("ResumeAgent", patrolWaitTime);
+            }
+        }
+    }
+
+    void ResumeAgent()
+    {
+        agent.isStopped = false;
+        anim.SetTrigger("walking");
+    }
+
+    #endregion
 }
+
+

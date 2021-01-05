@@ -11,6 +11,10 @@ TagManager:
   - BronzeDoor
   - SilverDoor
   - GoldenDoor
+  - wp
+  - BodyShot
+  - ArmShot
+  - FootShot
   layers:
   - Default
   - TransparentFX

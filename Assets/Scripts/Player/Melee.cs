@@ -53,14 +53,18 @@ public class Melee : MonoBehaviour
                 }
                 if (Input.GetMouseButtonDown(0) && PlayerHealthController.instance.currentStamina >= 2)
                 {
-                    PlayerHealthController.instance.SpendStamina(atk4StamCost);
 
-                    PlayerController.instance.attack4 = true;
+                    //PlayerHealthController.instance.notMoving = false;
+                    //meleeCollider.isTrigger = true;//make it a function to use as an animation event
+                    PlayerHealthController.instance.SpendStamina(atk3StamCost);
+
+                    PlayerController.instance.attack3 = true;
 
                     PlayerHealthController.instance.notMoving = false;
                     meleeCollider.isTrigger = true;//make it a function to use as an animation event
-                    anim.SetBool("attacking4", true);
+                    anim.SetBool("attacking3", true);
                 }
+
             }
             else
             {
@@ -75,18 +79,16 @@ public class Melee : MonoBehaviour
                     meleeCollider.isTrigger = true;//make it a function to use as an animation event
                     anim.SetBool("attacking", true);
                 }
+           
                 if (Input.GetMouseButtonDown(0) && PlayerHealthController.instance.currentStamina >= 2)
-                {                    
+                {
+                    PlayerHealthController.instance.SpendStamina(atk4StamCost);
 
-                    //PlayerHealthController.instance.notMoving = false;
-                    //meleeCollider.isTrigger = true;//make it a function to use as an animation event
-                    PlayerHealthController.instance.SpendStamina(atk3StamCost);
+                    PlayerController.instance.attack4 = true;
 
-                    PlayerController.instance.attack3 = true;
-
-                    PlayerHealthController.instance.notMoving = false;                    
+                    PlayerHealthController.instance.notMoving = false;
                     meleeCollider.isTrigger = true;//make it a function to use as an animation event
-                    anim.SetBool("attacking3", true);
+                    anim.SetBool("attacking4", true);
                 }
             }
         }
@@ -114,26 +116,27 @@ public class Melee : MonoBehaviour
             }
         }
 
-        if (other.gameObject.tag == "HeadShot" )
+        if (other.gameObject.tag == "HeadShot")
         {
-            
-            if (PlayerController.instance.attack1)
-            {
-                other.transform.parent.GetComponent<EnemyHealthController>().DamageEnemy((atk1dmg + baseDamage) * 2);
-            }
-            else if (PlayerController.instance.attack2)
-            {
-                other.transform.parent.GetComponent<EnemyHealthController>().DamageEnemy((atk2dmg + baseDamage) * 2);
-            }
-            else if (PlayerController.instance.attack3)
-            {
-                other.transform.parent.GetComponent<EnemyHealthController>().DamageEnemy((atk3dmg + baseDamage) * 2);
-            }
-            else if (PlayerController.instance.attack4)
-            {
-                other.transform.parent.GetComponent<EnemyHealthController>().DamageEnemy((atk4dmg + baseDamage) * 2);
-            }
+            other.GetComponentInParent<EnemyHealthController>().DamageEnemy(other.GetComponentInParent<EnemyHealthController>().maxHealth);//dmg based on characters attributes (and weapon maybe)
         }
+
+        if (other.gameObject.tag == "BodyShot" )
+        {
+            other.GetComponentInParent<EnemyHealthController>().DamageEnemy(3);//dmg based on characters attributes (and weapon maybe)
+        }
+
+        if (other.gameObject.tag == "ArmShot")
+        {
+            other.GetComponentInParent<EnemyHealthController>().DamageEnemy(1);//dmg based on characters attributes (and weapon maybe)
+        }
+
+        if (other.gameObject.tag == "Footshot")
+        {
+            other.GetComponentInParent<EnemyHealthController>().DamageEnemy(2);//dmg based on characters attributes (and weapon maybe)
+        }
+
+
     }
    
 }

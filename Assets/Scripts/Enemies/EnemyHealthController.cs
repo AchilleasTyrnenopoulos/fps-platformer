@@ -8,7 +8,11 @@ public class EnemyHealthController : MonoBehaviour
 {
     public static EnemyHealthController instance;
 
+    public bool hasRagdoll;
+    public bool isDead;
+
     [Header("ENEMY STATS")]
+    public int maxHealth = 5;
     public int currentHealth = 5;
     //public EnemyController theEC;
     
@@ -24,7 +28,7 @@ public class EnemyHealthController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        currentHealth = maxHealth;
     }
 
     // Update is called once per frame
@@ -36,17 +40,17 @@ public class EnemyHealthController : MonoBehaviour
     public void DamageEnemy(int damageAmount)
     {
         currentHealth -= damageAmount;
-        //if (theEC != null)
-        //{
-        //    theEC.GetShot();
-        //}
+
         if (currentHealth <= 0)
         {
+            isDead = true;
+             
             //GET CURRENT ENEMY POSITION
             Vector3 currEnemyPos = new Vector3();
             currEnemyPos = transform.position;
             
-            Destroy(gameObject);
+            if (!hasRagdoll)            
+                Destroy(gameObject);
             
             //DROP LOOT
             if (dropsLoot)
