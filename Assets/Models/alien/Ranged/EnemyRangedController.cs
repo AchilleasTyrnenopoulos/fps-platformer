@@ -24,8 +24,11 @@ public class EnemyRangedController : MonoBehaviour
 
     //line of sight
     public bool seesPlayer;
-    public float visDistance = 20.0f;
+    public float senseDistance = 20.0f;
+    public float visDistance = 50f;
     public float visAngle = 90.0f;
+    public float huntingTimer = 5f;
+    public float huntingCounter = 0f;
 
     //awareness
     public float awareRange = 4.0f;
@@ -76,16 +79,39 @@ public class EnemyRangedController : MonoBehaviour
         //calculate the angle from the direction (of npc to player) and the 'facing forwrd' of npc
         float angle = Vector3.Angle(direction, this.transform.forward);
 
+        RaycastHit hit;
+
         //check if player is visible
-        if (direction.magnitude < visDistance && angle < visAngle
+        if (direction.magnitude < senseDistance && angle < visAngle
             || aware && Vector3.Distance(agent.transform.position, player.transform.position) < 2f)
         {
             seesPlayer = true;
         }
-        else
+        /*else*/ if (Physics.Raycast(this.transform.position + new Vector3(0, 1.6f, 0), this.transform.forward, out hit , visDistance))//make 50f a variable
         {
-            seesPlayer = false;
+            if (hit.collider.tag == "Player")
+            {
+                Debug.Log("sees player");
+                seesPlayer = true;
+            }            
         }
+        //else
+        //{
+        //    seesPlayer = false;            
+        //}
+        Debug.DrawRay(this.transform.position + new Vector3(0, 1.6f, 0), this.transform.forward * visDistance, Color.red);
+        if (seesPlayer)
+        {
+            huntingCounter += Time.deltaTime;
+            if(huntingTimer <= huntingCounter)
+            {
+                seesPlayer = false;
+                huntingCounter = 0f;
+            }
+        }
+
+
+
         //check if npc 'senses the player'
         if (Vector3.Distance(agent.transform.position, player.transform.position) < awareRange && PlayerController.instance.crouching == false
             || seesPlayer == true
@@ -129,8 +155,10 @@ public class EnemyRangedController : MonoBehaviour
                 break;
 
             case STATE.CHASE:
+                attacking = false;
+
                 agent.speed = runSpeed;
-                agent.stoppingDistance = 3.5f;
+                agent.stoppingDistance = 8f;
                 agent.SetDestination(player.transform.position);
 
                 //switch states
@@ -200,10 +228,9 @@ public class EnemyRangedController : MonoBehaviour
                     //agent.isStopped = true;
                     agent.SetDestination(agent.transform.position);
 
-
-
                     if (Vector3.Distance(agent.transform.position, player.transform.position) > agent.stoppingDistance)
                     {
+                        attacking = false;
                         anim.SetTrigger("running");
                         state = STATE.CHASE;
                     }
@@ -257,6 +284,11 @@ public class EnemyRangedController : MonoBehaviour
     {
         agent.isStopped = false;
         anim.SetTrigger("walking");
+    }
+
+    void SeesPlayerFalse()
+    {
+        seesPlayer = false;
     }
 
     #endregion

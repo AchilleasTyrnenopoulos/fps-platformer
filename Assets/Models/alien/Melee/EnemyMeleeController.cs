@@ -24,8 +24,11 @@ public class EnemyMeleeController : MonoBehaviour
 
     //line of sight
     public bool seesPlayer;
-    public float visDistance = 20.0f;
+    public float senseDistance = 20.0f;
+    public float visDistance = 50f;
     public float visAngle = 90.0f;
+    public float huntingTimer = 5f;
+    public float huntingCounter = 0f;
 
     //awareness
     public float awareRange = 4.0f;
@@ -77,15 +80,39 @@ public class EnemyMeleeController : MonoBehaviour
         float angle = Vector3.Angle(direction, this.transform.forward);
 
         //check if player is visible
-        if (direction.magnitude < visDistance && angle < visAngle
+        if (direction.magnitude < senseDistance && angle < visAngle
             || aware && Vector3.Distance(agent.transform.position, player.transform.position) < 2f) 
         {
             seesPlayer = true;
         }
-        else
+        //else
+        //{
+        //    seesPlayer = false;
+        //}
+
+        RaycastHit hit;
+        /*else*/
+        if (Physics.Raycast(this.transform.position + new Vector3(0, 1.6f, 0), this.transform.forward, out hit, visDistance))//make 50f a variable
         {
-            seesPlayer = false;
+            if (hit.collider.tag == "Player")
+            {
+                Debug.Log("sees player");
+                seesPlayer = true;
+            }
         }
+
+        Debug.DrawRay(this.transform.position + new Vector3(0, 1.6f, 0), this.transform.forward * visDistance, Color.red);
+
+        if (seesPlayer)
+        {
+            huntingCounter += Time.deltaTime;
+            if (huntingTimer <= huntingCounter)
+            {
+                seesPlayer = false;
+                huntingCounter = 0f;
+            }
+        }
+
         //check if npc 'senses the player'
         if (Vector3.Distance(agent.transform.position, player.transform.position) < awareRange && PlayerController.instance.crouching == false 
             || seesPlayer == true 
@@ -96,7 +123,7 @@ public class EnemyMeleeController : MonoBehaviour
         else
         {
             aware = false;
-        }
+        }           
 
         #region States
         switch (state)
